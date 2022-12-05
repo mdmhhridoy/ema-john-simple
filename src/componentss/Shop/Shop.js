@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Cart from '../Cart/Cart';
 import Product from '../Product/Product';
 import './Shop.css'
-import {addToDb} from '../../utilities/fakedb'
+import {addToDb, getStoredCart} from '../../utilities/fakedb'
 const Shop = () => {
     const [products, setProducts] =useState([])
     const [cart, setCart] = useState([])
@@ -14,11 +14,36 @@ const Shop = () => {
         .then(res => res.json())
         .then(data=> setProducts(data))
     },[])
-    const handleAddToCart = (Product)=>{
-        console.log(Product);
-        const newCart = [...cart , Product]
+    //getting data from local storage
+    useEffect(() =>{
+    const storedCart = getStoredCart()
+    const savedCart = []
+    for(const id in storedCart){
+        const addedProduct = products.find(product => product.id === id);
+        if(addedProduct){
+            const quantity = storedCart[id]
+            addedProduct.quantity=quantity;
+           savedCart.push(addedProduct);
+        }
+    }
+    // setting data from old click
+    setCart(savedCart);
+    },[products])
+    const handleAddToCart = (sselectedProduct)=>{
+        console.log(sselectedProduct);
+        let newCart = [];
+        const exists = cart.find(product => product.id === sselectedProduct.id)
+        if(!exists){
+            sselectedProduct.quantity = 1;
+            newCart = [...cart , sselectedProduct]
+        }
+        else{
+            const rest = cart.filter(product => product.id !== sselectedProduct.id);
+            exists.quantity = exists.quantity + 1;
+            newCart = [...rest, exists]
+        } 
         setCart(newCart);
-        addToDb(Product.id)
+        addToDb(sselectedProduct.id)
         
     }
     return (
